@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Mobbin Unblur PRO - Glass Edition",
+  "version": "6.5.2",
+  "description": "Clean activation dialog with priority updates message",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.mobbin.com/*",
+    "*://*.bytescale.mobbin.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.mobbin.com/*"
+      ],
+      "css": [
+        "unblur.css"
+      ],
+      "js": [
+        "unblur.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Mobbin Unblur PRO",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}

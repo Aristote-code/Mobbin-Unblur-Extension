@@ -1,0 +1,96 @@
+/* Mobbin Ultimate Unblur v5.0 - Complete Backdrop Filter Removal */
+
+/* Remove all backdrop filters globally */
+* {
+  --tw-backdrop-blur: none !important;
+  --tw-backdrop-brightness: none !important;
+  --tw-backdrop-contrast: none !important;
+  --tw-backdrop-grayscale: none !important;
+  --tw-backdrop-hue-rotate: none !important;
+  --tw-backdrop-invert: none !important;
+  --tw-backdrop-opacity: none !important;
+  --tw-backdrop-saturate: none !important;
+  --tw-backdrop-sepia: none !important;
+}
+
+/* Remove backdrop-filter from all elements */
+*,
+*::before,
+*::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Specifically target blur containers */
+[class*="backdrop-blur"]::after,
+[class*="backdrop-blur"]::before,
+[class*="after:backdrop-blur"]::after,
+[class*="after:backdrop-blur"]::before {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: transparent !important;
+  display: none !important;
+}
+
+/* Enable image interactions */
+img {
+  pointer-events: auto !important;
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
+  -webkit-user-drag: element !important;
+}
+
+img[draggable="false"] {
+  -webkit-user-drag: element !important;
+}
+
+/* Remove overlay divs */
+.bg-background-cell-overlay {
+  display: none !important;
+}
+
+/* Hide the semi-transparent white overlay on images (absolute inset-0 + backdrop-blur) */
+.absolute.inset-0[class*="backdrop-blur"] {
+  display: none !important;
+}
+
+/* Remove any remaining overlay divs on image cards */
+[class*="cell-overlay"],
+[class*="CellOverlay"],
+[class*="card-overlay"],
+[class*="CardOverlay"],
+[class*="image-overlay"],
+[class*="ImageOverlay"] {
+  display: none !important;
+  background: transparent !important;
+  opacity: 0 !important;
+}
+
+/* Remove any white pseudo-element overlays on cards */
+[class*="cell"]::after,
+[class*="card"]::after {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Hide Mobbin upgrade/paywall modals */
+[class*="UpgradeModal"],
+[class*="upgrade-modal"],
+[class*="PaywallModal"],
+[class*="paywall-modal"],
+[class*="UpgradeCta"],
+[class*="upgrade-cta"],
+[class*="PricingModal"],
+[class*="PricingBanner"],
+[class*="pricing-banner"],
+[role="dialog"][class*="upgrade"],
+[role="dialog"][class*="paywall"] {
+  display: none !important;
+}
+
+/* Hide the sticky upgrade banner (aside.sticky with overflow-x-clip) */
+aside.sticky[class*="overflow-x-clip"],
+aside.sticky.z-10 {
+  display: none !important;
+}
