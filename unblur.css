@@ -1,36 +1,7 @@
-/* Mobbin Ultimate Unblur v5.0 - Complete Backdrop Filter Removal */
+/* Mobbin Unblur PRO v6.6 — Targeted Overlay Removal */
 
-/* Remove all backdrop filters globally */
-* {
-  --tw-backdrop-blur: none !important;
-  --tw-backdrop-brightness: none !important;
-  --tw-backdrop-contrast: none !important;
-  --tw-backdrop-grayscale: none !important;
-  --tw-backdrop-hue-rotate: none !important;
-  --tw-backdrop-invert: none !important;
-  --tw-backdrop-opacity: none !important;
-  --tw-backdrop-saturate: none !important;
-  --tw-backdrop-sepia: none !important;
-}
-
-/* Remove backdrop-filter from all elements */
-*,
-*::before,
-*::after {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* Specifically target blur containers */
-[class*="backdrop-blur"]::after,
-[class*="backdrop-blur"]::before,
-[class*="after:backdrop-blur"]::after,
-[class*="after:backdrop-blur"]::before {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background: transparent !important;
-  display: none !important;
-}
+/* Remove backdrop-filter from elements — but NOT globally on * which causes layout collapse.
+   Only remove from known blur/overlay containers. */
 
 /* Enable image interactions */
 img {
@@ -44,37 +15,35 @@ img[draggable="false"] {
   -webkit-user-drag: element !important;
 }
 
-/* Remove overlay divs */
-.bg-background-cell-overlay {
-  display: none !important;
-}
-
-/* Hide the semi-transparent white overlay on images (absolute inset-0 + backdrop-blur) */
-.absolute.inset-0[class*="backdrop-blur"] {
-  display: none !important;
-}
-
-/* Remove any remaining overlay divs on image cards */
+/* ── Blur overlay elements ── */
+/* The semi-transparent white blur overlay Mobbin puts on locked cards:
+   it's an absolutely-positioned child with a backdrop-blur class. */
+.bg-background-cell-overlay,
 [class*="cell-overlay"],
-[class*="CellOverlay"],
-[class*="card-overlay"],
-[class*="CardOverlay"],
-[class*="image-overlay"],
-[class*="ImageOverlay"] {
+[class*="CellOverlay"] {
   display: none !important;
-  background: transparent !important;
-  opacity: 0 !important;
 }
 
-/* Remove any white pseudo-element overlays on cards */
-[class*="cell"]::after,
-[class*="card"]::after {
-  background: transparent !important;
+/* Absolute inset-0 divs that carry a backdrop-blur class — these are the
+   blur glass panels, NOT layout containers. */
+.absolute.inset-0[class*="backdrop-blur"],
+.absolute[class*="inset-0"][class*="backdrop-blur"] {
+  display: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
 
-/* Hide Mobbin upgrade/paywall modals */
+/* Remove pseudo-element blur overlays only on known card/cell containers */
+[data-sentry-component="ScreenCell"]::after,
+[data-sentry-source-file="ScreenCell.tsx"]::after,
+[class*="ScreenCell"]::after {
+  display: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: transparent !important;
+}
+
+/* ── Paywall / upgrade overlays ── */
 [class*="UpgradeModal"],
 [class*="upgrade-modal"],
 [class*="PaywallModal"],
@@ -89,8 +58,16 @@ img[draggable="false"] {
   display: none !important;
 }
 
-/* Hide the sticky upgrade banner (aside.sticky with overflow-x-clip) */
-aside.sticky[class*="overflow-x-clip"],
-aside.sticky.z-10 {
+/* Hide the sticky upgrade banner — only when it contains the overflow-x-clip
+   utility class (Mobbin's paywall banner), NOT generic sidebars. */
+aside.sticky[class*="overflow-x-clip"] {
+  display: none !important;
+}
+
+/* ChurnKey paywall wall elements */
+ck-pause-wall,
+ck-failed-payment-wall,
+cancellation-wall,
+[class*="churnkey"] {
   display: none !important;
 }

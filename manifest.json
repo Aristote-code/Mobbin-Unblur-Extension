@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Mobbin Unblur PRO - Glass Edition",
-  "version": "6.5.2",
-  "description": "Clean activation dialog with priority updates message",
+  "version": "6.7.0",
+  "description": "v6.7: Fiber-based direct image URL extraction for encrypted screens",
   "permissions": [
     "activeTab",
     "scripting"
@@ -23,6 +23,16 @@
         "unblur.js"
       ],
       "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://*.mobbin.com/*"
+      ],
+      "js": [
+        "inject.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
     }
   ],
   "action": {
