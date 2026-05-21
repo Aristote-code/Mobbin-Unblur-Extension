@@ -1,4 +1,4 @@
-// Mobbin Unblur PRO v6.6.0
+// Mobbin Unblur PRO v7.0.0
 (function(){
   'use strict';
 
@@ -36,17 +36,21 @@
     try{
       if(!img.src) return;
       const orig = img.src;
+      if(orig.indexOf('bytescale.mobbin.com') === -1) return;
       // Don't skip encrypted images on first pass — inject.js (MAIN world) may later
       // rewrite their src to a path-based URL via assetUrlMap, and we need to pick that up.
       const isEncrypted = orig.indexOf('file.webp') !== -1 && orig.indexOf('enc=') !== -1;
       if(processed.has(img) && !isEncrypted) return;
+      // Always strip srcset/sizes on bytescale images — Mobbin's srcset entries are
+      // malformed (multiple 'w' descriptors, mix of 'x' and 'w') which floods the
+      // console with parse errors, and we'd rather the browser use only our src anyway.
+      try { if (img.hasAttribute('srcset')) img.removeAttribute('srcset'); } catch(_){}
+      try { if (img.hasAttribute('sizes')) img.removeAttribute('sizes'); } catch(_){}
       const nu = unifiedUrl(orig);
       if(nu !== orig){
         // Only mark as fully processed when we successfully rewrote the URL
         processed.add(img);
         originalUrls.set(img, orig);
-        try { if (img.hasAttribute('srcset')) img.removeAttribute('srcset'); } catch(_){}
-        try { if (img.hasAttribute('sizes')) img.removeAttribute('sizes'); } catch(_){}
         img.src = nu;
       } else if(!isEncrypted) {
         // Path-based URL that unifiedUrl didn't change (already has our params) — mark done.

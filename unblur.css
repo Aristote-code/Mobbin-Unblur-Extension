@@ -15,6 +15,31 @@ img[draggable="false"] {
   -webkit-user-drag: element !important;
 }
 
+/* Strip any client-side filter blur applied to media elements. Mobbin sometimes
+   applies `filter: blur(...)` directly to <img> for paywalled cards — this
+   removes that and the Tailwind blur utility classes that compute via --tw-blur.
+   Targeted to media only (img/picture/video) so we don't break logos, icons,
+   or other elements that legitimately use filters. */
+img, picture, video {
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+/* Kill Tailwind's blur utility classes wherever they appear (.blur, .blur-sm,
+   .blur-md, .blur-lg, .blur-xl, .blur-2xl, .blur-3xl). The combinator targets
+   only Tailwind blur variants, not arbitrary class names. */
+[class~="blur"],
+[class*="blur-sm"],
+[class*="blur-md"],
+[class*="blur-lg"],
+[class*="blur-xl"],
+[class*="blur-2xl"],
+[class*="blur-3xl"] {
+  filter: none !important;
+  -webkit-filter: none !important;
+  --tw-blur: 0 !important;
+}
+
 /* ── Blur overlay elements ── */
 /* The semi-transparent white blur overlay Mobbin puts on locked cards:
    it's an absolutely-positioned child with a backdrop-blur class. */
@@ -41,6 +66,21 @@ img[draggable="false"] {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   background: transparent !important;
+}
+
+/* Locked-card wrappers — Mobbin attaches a backdrop-blur pseudo-element to
+   elements with these utility classes (used in place of a ScreenCell component
+   for locked content). They don't carry the data-sentry-component attribute,
+   so the rule above misses them. */
+[class*="mobile-screen-border-radius"]::after,
+[class*="screen-inset-border"]::after,
+.pointer-events-none[class*="mobile-screen-border-radius"]::after,
+.pointer-events-none[class*="screen-inset-border"]::after {
+  display: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: transparent !important;
+  content: none !important;
 }
 
 /* ── Paywall / upgrade overlays ── */

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Mobbin Unblur PRO - Glass Edition",
-  "version": "6.7.0",
-  "description": "v6.7: Fiber-based direct image URL extraction for encrypted screens",
+  "version": "7.0.0",
+  "description": "v7.0: Fiber+UUID direct path construction for all encrypted screens",
   "permissions": [
     "activeTab",
     "scripting"
