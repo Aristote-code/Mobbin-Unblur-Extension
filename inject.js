@@ -658,38 +658,18 @@
       if(t.tagName !== 'IMG') return;
       if(!t.src || t.src.indexOf('bytescale.mobbin.com') === -1) return;
 
+      // If the image is inside a real /screens/UUID anchor, let the browser handle it.
       const a = t.closest && t.closest('a[href]');
-      let fallbackAnchorHref = null;
-
       if(a){
         const h = a.getAttribute('href') || '';
-        if(!h || h === '#'){
-          // Anchor with no real href — locked card, intercept below
-        } else if(/(\/|^\/)screens\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(h)){
+        if(/(\/|^)(screens)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(h)){
           return; // Real /screens/UUID anchor — browser handles it natively
-        } else if(/(\/|^\/)(apps|sites|flows|elements|discover|collections|search|profile)[\/\?#]/i.test(h)
-                  || /(\/|^\/)(apps|sites|flows|elements|discover|collections|search|profile)$/.test(h)){
-          return; // App / site / flow / discover cards — let browser navigate normally
-        } else {
-          // Mobbin’s locked-card redirect (upgrade, signin, etc.) — intercept
-          fallbackAnchorHref = h;
         }
       }
 
-      // ── Guard: only intercept on pages that show a screen grid ────────────────
-      // Prevents accidental hijacking of app-icon clicks on the discovery page.
-      if(!fallbackAnchorHref && !a){
-        const hasGrid = !!(
-          document.querySelector('[data-sentry-component="ScreensGrid"]') ||
-          document.querySelector('[data-sentry-component="ScreenCell"]') ||
-          /\/apps\/.test(window.location.pathname) && /\/(screens|flows|elements)/.test(window.location.pathname)
-        );
-        if(!hasGrid) return;
-      }
-
-      // ── Primary: resolve screen UUID from the React fiber at click time ───────
-      // Walk the clicked img AND its DOM ancestors because the ScreenCell fiber
-      // lives on a parent div, not on the <img> itself.
+      // ── Primary: resolve screen UUID from fiber at click time ────────────────────
+      // Walk the clicked <img> AND its DOM ancestors (up to 10 levels) because
+      // the ScreenCell fiber lives on a parent div, not on the <img> itself.
       let screenUuid = null;
       try {
         screenUuid = findScreenUuidFromElement(t);
@@ -702,6 +682,7 @@
       } catch(_) {}
 
       if (screenUuid) {
+        // Fiber gave us a screen UUID — intercept and open the detail modal.
         ev.preventDefault();
         ev.stopPropagation();
         try { console.log(LOG, 'click: fiber navigate → /screens/' + screenUuid); } catch(_) {}
@@ -709,15 +690,9 @@
         return;
       }
 
-      // ── Fallback: dispatch imageAssetUuid for async screenMap resolution ─────
-      const imageAssetUuid = extractImageAssetUuid(t);
-      if(!imageAssetUuid) return;
-      ev.preventDefault();
-      ev.stopPropagation();
-      const detail = { imageAssetUuid };
-      if(fallbackAnchorHref) detail.fallbackAnchorHref = fallbackAnchorHref;
-      try { console.log(LOG, 'click: async dispatch', detail); } catch(_) {}
-      dispatchNavigate(detail);
+      // ── No screen UUID found — this is an app card / hero / non-screen image ────
+      // Let the browser handle the click naturally (navigate to /apps/... etc.)
+      try { console.log(LOG, 'click: no screen uuid — not intercepting', t.src && t.src.slice(0,80)); } catch(_) {}
     }catch(e){}
   }
 
