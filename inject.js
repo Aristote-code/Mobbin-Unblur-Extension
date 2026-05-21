@@ -660,20 +660,36 @@
 
       const a = t.closest && t.closest('a[href]');
       let fallbackAnchorHref = null;
+
       if(a){
         const h = a.getAttribute('href') || '';
-        if(h && h !== '#'){
-          if(/(^\/|\/)screens\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(h)){
-            return; // real /screens/UUID anchor — browser handles it natively
-          }
+        if(!h || h === '#'){
+          // Anchor with no real href — locked card, intercept below
+        } else if(/(\/|^\/)screens\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(h)){
+          return; // Real /screens/UUID anchor — browser handles it natively
+        } else if(/(\/|^\/)(apps|sites|flows|elements|discover|collections|search|profile)[\/\?#]/i.test(h)
+                  || /(\/|^\/)(apps|sites|flows|elements|discover|collections|search|profile)$/.test(h)){
+          return; // App / site / flow / discover cards — let browser navigate normally
+        } else {
+          // Mobbin’s locked-card redirect (upgrade, signin, etc.) — intercept
           fallbackAnchorHref = h;
         }
       }
 
-      // ── Primary: resolve screen UUID from the React fiber RIGHT NOW ──────────
-      // Walk the clicked img AND its DOM ancestors (up to 10 levels) because
-      // the ScreenCell fiber lives on a parent div, not on the <img> itself.
-      // This works for ALL images — 1st, 5th, 50th — no screenMap needed.
+      // ── Guard: only intercept on pages that show a screen grid ────────────────
+      // Prevents accidental hijacking of app-icon clicks on the discovery page.
+      if(!fallbackAnchorHref && !a){
+        const hasGrid = !!(
+          document.querySelector('[data-sentry-component="ScreensGrid"]') ||
+          document.querySelector('[data-sentry-component="ScreenCell"]') ||
+          /\/apps\/.test(window.location.pathname) && /\/(screens|flows|elements)/.test(window.location.pathname)
+        );
+        if(!hasGrid) return;
+      }
+
+      // ── Primary: resolve screen UUID from the React fiber at click time ───────
+      // Walk the clicked img AND its DOM ancestors because the ScreenCell fiber
+      // lives on a parent div, not on the <img> itself.
       let screenUuid = null;
       try {
         screenUuid = findScreenUuidFromElement(t);
@@ -693,7 +709,7 @@
         return;
       }
 
-      // ── Fallback: async dispatch with imageAssetUuid → screenMap lookup ────
+      // ── Fallback: dispatch imageAssetUuid for async screenMap resolution ─────
       const imageAssetUuid = extractImageAssetUuid(t);
       if(!imageAssetUuid) return;
       ev.preventDefault();

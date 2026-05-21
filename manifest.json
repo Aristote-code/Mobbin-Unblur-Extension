@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Mobbin Unblur PRO - Glass Edition",
-  "version": "7.1.0",
-  "description": "v7.1: Click any image to open detail modal via fiber UUID",
+  "version": "7.1.1",
+  "description": "v7.1.1: Fix app card navigation broken by click interception",
   "permissions": [
     "activeTab",
     "scripting"
