@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Mobbin Unblur PRO - Glass Edition",
-  "version": "7.0.0",
-  "description": "v7.0: Fiber+UUID direct path construction for all encrypted screens",
+  "version": "7.1.0",
+  "description": "v7.1: Click any image to open detail modal via fiber UUID",
   "permissions": [
     "activeTab",
     "scripting"

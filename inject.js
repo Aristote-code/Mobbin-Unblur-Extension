@@ -657,23 +657,50 @@
       if(!t || !t.tagName) return;
       if(t.tagName !== 'IMG') return;
       if(!t.src || t.src.indexOf('bytescale.mobbin.com') === -1) return;
+
       const a = t.closest && t.closest('a[href]');
       let fallbackAnchorHref = null;
       if(a){
         const h = a.getAttribute('href') || '';
         if(h && h !== '#'){
-          if(/(^|\/)screens\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(h)){
-            return; // real screen anchor — leave it alone
+          if(/(^\/|\/)screens\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(h)){
+            return; // real /screens/UUID anchor — browser handles it natively
           }
           fallbackAnchorHref = h;
         }
       }
+
+      // ── Primary: resolve screen UUID from the React fiber RIGHT NOW ──────────
+      // Walk the clicked img AND its DOM ancestors (up to 10 levels) because
+      // the ScreenCell fiber lives on a parent div, not on the <img> itself.
+      // This works for ALL images — 1st, 5th, 50th — no screenMap needed.
+      let screenUuid = null;
+      try {
+        screenUuid = findScreenUuidFromElement(t);
+        if (!screenUuid) {
+          let cur = t.parentElement;
+          for (let d = 0; cur && d < 10 && !screenUuid; d++, cur = cur.parentElement) {
+            screenUuid = findScreenUuidFromElement(cur);
+          }
+        }
+      } catch(_) {}
+
+      if (screenUuid) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        try { console.log(LOG, 'click: fiber navigate → /screens/' + screenUuid); } catch(_) {}
+        navigate('/screens/' + screenUuid);
+        return;
+      }
+
+      // ── Fallback: async dispatch with imageAssetUuid → screenMap lookup ────
       const imageAssetUuid = extractImageAssetUuid(t);
       if(!imageAssetUuid) return;
       ev.preventDefault();
       ev.stopPropagation();
       const detail = { imageAssetUuid };
       if(fallbackAnchorHref) detail.fallbackAnchorHref = fallbackAnchorHref;
+      try { console.log(LOG, 'click: async dispatch', detail); } catch(_) {}
       dispatchNavigate(detail);
     }catch(e){}
   }
