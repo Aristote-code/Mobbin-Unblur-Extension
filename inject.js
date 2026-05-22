@@ -650,143 +650,67 @@
     catch(e){}
   }
 
-  // Returns true when the current page is an individual app's detail page
-  // (the screens/flows/elements/ui-elements tab), e.g.:
-  //   /apps/grok-ios-UUID/platformUUID/screens
-  // On these pages, locked cards should open the screen modal.
-  // On discovery/browse pages, locked cards should navigate to the app normally.
+  // ── Click handler: open screen modal for locked cards on app detail pages ──
+  //
+  // ONLY intercepts clicks when:
+  //   1. We are on an app detail page (/apps/.../screens or /flows or /elements)
+  //   2. The image is NOT already inside a /screens/UUID anchor (those work natively)
+  //   3. The React fiber on the card has a screen UUID we can navigate to
+  //
+  // Everything else (app cards, discovery page, hero images) is left alone.
+
   function isOnAppDetailPage() {
     try {
-      // Must have /apps/{slug-with-uuid}/{uuid}/(screens|flows|elements)
-      return /\/apps\/[^/]+-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/(screens|flows|elements|ui-elements)/i.test(window.location.pathname);
+      // /apps/{slug-UUID}/{platformUUID}/(screens|flows|elements|ui-elements)
+      return /\/apps\/[^/]+-[0-9a-f-]{36}\/[0-9a-f-]{36}\/(screens|flows|elements|ui-elements)/i
+             .test(window.location.pathname);
     } catch(_) { return false; }
   }
 
-  function onCapturedClick(ev){
-    try{
-      if(ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+  function onCapturedClick(ev) {
+    try {
+      // Basic guards
+      if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
       const t = ev.target;
-      if(!t || !t.tagName) return;
-      if(t.tagName !== 'IMG') return;
-      if(!t.src || t.src.indexOf('bytescale.mobbin.com') === -1) return;
+      if (!t || t.tagName !== 'IMG') return;
+      if (!t.src || t.src.indexOf('bytescale.mobbin.com') === -1) return;
 
-      // If the image is inside a real /screens/UUID anchor, let the browser handle it.
+      // Only operate on an app's screens/flows/elements page
+      if (!isOnAppDetailPage()) return;
+
+      // If image is already inside a real /screens/UUID link, let browser handle it
       const a = t.closest && t.closest('a[href]');
-      if(a){
-        const h = a.getAttribute('href') || '';
-        if(/(\/|^)(screens)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(h)){
-          return; // Real /screens/UUID anchor — browser handles it natively
-        }
-      }
+      if (a && /\/screens\/[0-9a-f-]{36}/i.test(a.getAttribute('href') || '')) return;
 
-      // ── Only intercept clicks when inside an app detail page ────────────────────
-      // On the apps discovery/browse page, locked app cards have anchors like
-      // /apps/slug-UUID/platformUUID/screens — we must NOT intercept those.
-      // We only intercept when we're already inside an app (screens/flows/elements tab)
-      // and a locked SCREEN card is clicked.
-      if(!isOnAppDetailPage()) {
-        return; // Discovery or other page — let browser navigate normally
-      }
-
-      // ── On an app detail page: resolve screen UUID from fiber at click time ─────
-      // Walk the clicked <img> AND its DOM ancestors (up to 10 levels) because
-      // the ScreenCell fiber lives on a parent div, not on the <img> itself.
+      // Try to find the screen UUID from the React fiber of this card
       let screenUuid = null;
       try {
         screenUuid = findScreenUuidFromElement(t);
         if (!screenUuid) {
-          let cur = t.parentElement;
-          for (let d = 0; cur && d < 10 && !screenUuid; d++, cur = cur.parentElement) {
-            screenUuid = findScreenUuidFromElement(cur);
+          let el = t.parentElement;
+          for (let d = 0; el && d < 10 && !screenUuid; d++, el = el.parentElement) {
+            screenUuid = findScreenUuidFromElement(el);
           }
         }
       } catch(_) {}
 
-      if (screenUuid) {
-        // Fiber gave us a screen UUID — intercept and open the detail modal.
-        ev.preventDefault();
-        ev.stopPropagation();
-        try { console.log(LOG, 'click: fiber navigate → /screens/' + screenUuid); } catch(_) {}
-        navigate('/screens/' + screenUuid);
-        return;
-      }
+      if (!screenUuid) return; // Could not identify screen — don't intercept
 
-      // No screen UUID found in fiber — don’t intercept, let browser handle.
-      try { console.log(LOG, 'click: no screen uuid in fiber, not intercepting'); } catch(_) {}
-    }catch(e){}
-  }
-
-  function navigate(target) {
-    if (!target) return;
-    let usedRouter = false;
-    try {
-      if (window.next && window.next.router && typeof window.next.router.push === 'function') {
-        window.next.router.push(target);
-        usedRouter = true;
-      }
-    } catch(_) {}
-    if (!usedRouter) {
+      // We have a screen UUID: prevent the default (possibly a paywall redirect)
+      // and navigate to the screen detail page to open the modal.
+      ev.preventDefault();
+      ev.stopPropagation();
       try {
-        history.pushState({}, '', target);
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      } catch(_) {
-        try { window.location.href = target; } catch(_) {}
-        return;
-      }
-    }
-    setTimeout(function() {
-      try {
-        const hasModal = document.querySelector('[role="dialog"], [class*="ScreenModal"], [class*="screen-modal"], [class*="ScreenDetail"]');
-        if (!hasModal && (window.location.pathname || '').includes(target)) {
-          try { history.back(); } catch(_) {}
+        if (window.next && window.next.router && typeof window.next.router.push === 'function') {
+          window.next.router.push('/screens/' + screenUuid);
+        } else {
+          history.pushState({}, '', '/screens/' + screenUuid);
+          window.dispatchEvent(new PopStateEvent('popstate'));
         }
+        try { console.log(LOG, 'click → /screens/' + screenUuid); } catch(_) {}
       } catch(_) {}
-    }, 600);
-  }
-
-  document.addEventListener('MobbinUnblur_Navigate', function(ev) {
-    try {
-      const detail = (ev && ev.detail) || {};
-      let target = detail.target;
-      if (!target && detail.imageAssetUuid) {
-        const lc = String(detail.imageAssetUuid).toLowerCase();
-        let screenUuid = screenMap.get(lc);
-        if (!screenUuid) {
-          try {
-            const imgs = document.querySelectorAll('img[src*="bytescale.mobbin.com"]');
-            for (let i = 0; i < imgs.length; i++) {
-              const path = (imgs[i].src || '').split('?')[0].toLowerCase();
-              if (path.indexOf(lc) === -1) continue;
-              screenUuid = findScreenUuidFromElement(imgs[i]);
-              if (screenUuid) { screenMap.set(lc, screenUuid); break; }
-              harvestPropsFromFiber(readFiberAt(imgs[i]), 60);
-              screenUuid = screenMap.get(lc);
-              if (screenUuid) break;
-              let cur = imgs[i].parentElement;
-              for (let d = 0; cur && d < 6 && !screenUuid; d++, cur = cur.parentElement) {
-                screenUuid = findScreenUuidFromElement(cur);
-              }
-              if (screenUuid) { screenMap.set(lc, screenUuid); break; }
-            }
-          } catch(_) {}
-        }
-        if (screenUuid) target = '/screens/' + screenUuid;
-      }
-      if (target) {
-        navigate(target);
-      } else if (detail.fallbackAnchorHref) {
-        try {
-          if (window.next && window.next.router && typeof window.next.router.push === 'function') {
-            window.next.router.push(detail.fallbackAnchorHref);
-          } else {
-            window.location.href = detail.fallbackAnchorHref;
-          }
-        } catch(_) {
-          try { window.location.href = detail.fallbackAnchorHref; } catch(_) {}
-        }
-      }
     } catch(_) {}
-  });
+  }
 
   try { document.addEventListener('click', onCapturedClick, true); } catch(_) {}
 
