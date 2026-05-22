@@ -569,27 +569,29 @@
 
   function isProbablyScreen(obj) {
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
+    // Must have a UUID id field
     const id = isUuidNonWatermark(obj.id) || isUuidNonWatermark(obj.uuid) || isUuidNonWatermark(obj.screenId);
     if (!id) return null;
+    // Explicit typename is the most reliable signal
     if (obj.__typename === 'Screen' || obj.__typename === 'AppScreen' || obj.__typename === 'MobbinScreen') return id;
-    for (const k of Object.keys(obj)) {
-      const v = obj[k];
-      if (typeof v === 'string' && v.indexOf('bytescale.mobbin.com') !== -1) return id;
-      if (v && typeof v === 'object' && !Array.isArray(v)) {
-        for (const sk of Object.keys(v)) {
-          if (typeof v[sk] === 'string' && v[sk].indexOf('bytescale.mobbin.com') !== -1) return id;
-        }
-      }
+    // Disqualify if it looks like an app, user, or collection object (not a screen)
+    const keys = Object.keys(obj);
+    const isNotScreen = keys.indexOf('iconUrl') !== -1          // app icon
+                     || keys.indexOf('bundleId') !== -1         // iOS bundle id
+                     || keys.indexOf('appStoreUrl') !== -1      // app store link
+                     || keys.indexOf('screensCount') !== -1     // app has N screens
+                     || keys.indexOf('platformId') !== -1       // app platform
+                     || keys.indexOf('firstScreen') !== -1      // app object
+                     || keys.indexOf('screens') !== -1          // collection/app
+                     || keys.indexOf('email') !== -1            // user object
+                     || keys.indexOf('avatarUrl') !== -1        // user object
+                     || keys.indexOf('slug') !== -1;            // app/site slug
+    if (isNotScreen) return null;
+    // Must have at least one screen-specific field with a bytescale image URL
+    const screenImageKeys = ['screenUrl','fullpageScreenUrl','imageUrl','imageURL','screenshot','thumbnail','previewUrl'];
+    for (const k of screenImageKeys) {
+      if (typeof obj[k] === 'string' && obj[k].indexOf('bytescale.mobbin.com') !== -1) return id;
     }
-    let screenSignals = 0;
-    const objKeys = Object.keys(obj);
-    for (const k of objKeys) {
-      if (SCREEN_FIELD_HINTS.indexOf(k) !== -1) screenSignals++;
-    }
-    const notScreen = objKeys.indexOf('slug') !== -1 || objKeys.indexOf('iconUrl') !== -1 ||
-                      objKeys.indexOf('email') !== -1 || objKeys.indexOf('avatarUrl') !== -1 ||
-                      objKeys.indexOf('firstScreen') !== -1 || objKeys.indexOf('screens') !== -1;
-    if (!notScreen && screenSignals >= 3) return id;
     return null;
   }
 

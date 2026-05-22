@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Mobbin Unblur PRO - Glass Edition",
-  "version": "7.2.0",
-  "description": "v7.2.0: Strip click handler to minimal safe version",
+  "version": "7.2.1",
+  "description": "v7.2.1: Fix isProbablyScreen false positives on app objects",
   "permissions": [
     "activeTab",
     "scripting"
