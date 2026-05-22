@@ -650,6 +650,18 @@
     catch(e){}
   }
 
+  // Returns true when the current page is an individual app's detail page
+  // (the screens/flows/elements/ui-elements tab), e.g.:
+  //   /apps/grok-ios-UUID/platformUUID/screens
+  // On these pages, locked cards should open the screen modal.
+  // On discovery/browse pages, locked cards should navigate to the app normally.
+  function isOnAppDetailPage() {
+    try {
+      // Must have /apps/{slug-with-uuid}/{uuid}/(screens|flows|elements)
+      return /\/apps\/[^/]+-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/(screens|flows|elements|ui-elements)/i.test(window.location.pathname);
+    } catch(_) { return false; }
+  }
+
   function onCapturedClick(ev){
     try{
       if(ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
@@ -667,7 +679,16 @@
         }
       }
 
-      // ── Primary: resolve screen UUID from fiber at click time ────────────────────
+      // ── Only intercept clicks when inside an app detail page ────────────────────
+      // On the apps discovery/browse page, locked app cards have anchors like
+      // /apps/slug-UUID/platformUUID/screens — we must NOT intercept those.
+      // We only intercept when we're already inside an app (screens/flows/elements tab)
+      // and a locked SCREEN card is clicked.
+      if(!isOnAppDetailPage()) {
+        return; // Discovery or other page — let browser navigate normally
+      }
+
+      // ── On an app detail page: resolve screen UUID from fiber at click time ─────
       // Walk the clicked <img> AND its DOM ancestors (up to 10 levels) because
       // the ScreenCell fiber lives on a parent div, not on the <img> itself.
       let screenUuid = null;
@@ -690,9 +711,8 @@
         return;
       }
 
-      // ── No screen UUID found — this is an app card / hero / non-screen image ────
-      // Let the browser handle the click naturally (navigate to /apps/... etc.)
-      try { console.log(LOG, 'click: no screen uuid — not intercepting', t.src && t.src.slice(0,80)); } catch(_) {}
+      // No screen UUID found in fiber — don’t intercept, let browser handle.
+      try { console.log(LOG, 'click: no screen uuid in fiber, not intercepting'); } catch(_) {}
     }catch(e){}
   }
 

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Mobbin Unblur PRO - Glass Edition",
-  "version": "7.1.2",
-  "description": "v7.1.2: Simplify click logic — fiber UUID decides interception",
+  "version": "7.1.3",
+  "description": "v7.1.3: Fix app card navigation — only intercept on app detail pages",
   "permissions": [
     "activeTab",
     "scripting"
