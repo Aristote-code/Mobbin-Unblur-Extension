@@ -662,10 +662,22 @@
   // Everything else (app cards, discovery page, hero images) is left alone.
 
   function isOnAppDetailPage() {
+    // Returns true when we are inside an individual app's content tab.
+    // Mobbin app detail URLs look like:
+    //   /apps/{slug-UUID}/{platformUUID}/screens
+    //   /apps/{slug-UUID}/{platformUUID}/flows
+    //   /apps/{slug-UUID}/{platformUUID}/ui-elements
+    //   (slug may or may not contain a UUID)
+    // Discovery / browse pages look like:
+    //   /discover/apps/ios/latest
+    //   /discover/apps/web/most-popular
+    // We use a liberal match: any /apps/.../(screens|flows|elements|ui-elements)
+    // that is NOT a /discover/ path.
     try {
-      // /apps/{slug-UUID}/{platformUUID}/(screens|flows|elements|ui-elements)
-      return /\/apps\/[^/]+-[0-9a-f-]{36}\/[0-9a-f-]{36}\/(screens|flows|elements|ui-elements)/i
-             .test(window.location.pathname);
+      const p = window.location.pathname;
+      if (p.indexOf('/discover/') !== -1) return false;
+      return /\/apps\/[^/]+\/(screens|flows|ui-elements|elements)/i.test(p) ||
+             /\/apps\/[^/]+\/[^/]+\/(screens|flows|ui-elements|elements)/i.test(p);
     } catch(_) { return false; }
   }
 

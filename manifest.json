@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Mobbin Unblur PRO - Glass Edition",
-  "version": "7.2.1",
-  "description": "v7.2.1: Fix isProbablyScreen false positives on app objects",
+  "version": "7.2.2",
+  "description": "v7.2.2: Fix isOnAppDetailPage — support all Mobbin URL formats",
   "permissions": [
     "activeTab",
     "scripting"
