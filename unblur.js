@@ -307,47 +307,93 @@
     }catch(e){ try{ console.warn(LOG, 'diagnostics failed', e); }catch(_){} }
   }
 
-  function initialize(){
-    try{ protectSetters(); }catch(e){}
+  // ── Lifecycle: dormant until the user clicks Unblur in the popup ──────────────
+  let _active        = false;
+  let _mo            = null;   // MutationObserver
+  let _io            = null;   // IntersectionObserver
+  let _scrollTimer   = null;
+  let _pollInterval  = null;
 
-    const run = ()=>{
-      try{ processAll(); }catch(e){}
-      try{ hideUpgradeOverlay(); }catch(e){}
+  function startUnblur() {
+    if (_active) return;
+    _active = true;
+    try { protectSetters(); } catch(e) {}
+
+    const run = () => {
+      try { processAll(); }         catch(e) {}
+      try { hideUpgradeOverlay(); } catch(e) {}
     };
 
-    if(document.body){ run(); } else { document.addEventListener('DOMContentLoaded', run); }
+    if (document.body) { run(); }
+    else { document.addEventListener('DOMContentLoaded', run, { once: true }); }
 
-    try{
-      const io = new IntersectionObserver((entries)=>{ entries.forEach(e=>{ try{ if(e.isIntersecting && e.target.tagName==='IMG') processImage(e.target); }catch(e2){} }); }, {rootMargin:'60px', threshold:.01});
-      document.querySelectorAll('img[src*="bytescale.mobbin.com"]').forEach(n=>{ try{ io.observe(n); }catch(e){} });
-    }catch(e){}
+    // IntersectionObserver — lazy-process newly visible images
+    try {
+      _io = new IntersectionObserver((entries) => {
+        entries.forEach(e => { try { if (e.isIntersecting && e.target.tagName === 'IMG') processImage(e.target); } catch(_) {} });
+      }, { rootMargin: '60px', threshold: 0.01 });
+      document.querySelectorAll('img[src*="bytescale.mobbin.com"]').forEach(n => { try { _io.observe(n); } catch(_) {} });
+    } catch(e) {}
 
-    let t; window.addEventListener('scroll', ()=>{ clearTimeout(t); t=setTimeout(run, 300); }, {passive:true});
+    // Scroll — re-scan after user scrolls
+    window.addEventListener('scroll', _onScroll, { passive: true });
 
-    try{
-      new MutationObserver((muts)=>{
-        try{ hideUpgradeOverlay(); }catch(e){}
-        muts.forEach(m=>{ m.addedNodes.forEach(node=>{ try{ if(node.nodeType===1){ if(node.tagName==='IMG' && node.src?.includes('bytescale.mobbin.com')) processImage(node); node.querySelectorAll?.('img[src*="bytescale.mobbin.com"]').forEach(processImage); } }catch(e){} }); });
-      }).observe(document.body || document.documentElement, {childList:true, subtree:true});
-    }catch(e){}
+    // MutationObserver — handle dynamically injected images
+    try {
+      _mo = new MutationObserver((muts) => {
+        try { hideUpgradeOverlay(); } catch(e) {}
+        muts.forEach(m => {
+          m.addedNodes.forEach(node => {
+            try {
+              if (node.nodeType === 1) {
+                if (node.tagName === 'IMG' && node.src && node.src.includes('bytescale.mobbin.com')) processImage(node);
+                if (node.querySelectorAll) node.querySelectorAll('img[src*="bytescale.mobbin.com"]').forEach(processImage);
+              }
+            } catch(_) {}
+          });
+        });
+      });
+      _mo.observe(document.body || document.documentElement, { childList: true, subtree: true });
+    } catch(e) {}
 
-    setInterval(run, 700);
-    document.addEventListener('MobbinUnblur_AutoRun', run);
+    // Periodic safety net
+    _pollInterval = setInterval(run, 800);
 
-    try{ document.addEventListener('click', onCapturedClick, true); }catch(e){}
+    // Click interception
+    try { document.addEventListener('click', onCapturedClick, true); } catch(e) {}
 
-    try{
-      const diagInterval = setInterval(()=>{
-        try{
-          if(diagRan){ clearInterval(diagInterval); return; }
-          if(document.querySelectorAll('img[src*="bytescale.mobbin.com"]').length >= 5){
-            runDiagnostics(); diagRan = true; clearInterval(diagInterval);
-          }
-        }catch(e){}
-      }, 500);
-      setTimeout(()=>{ try{ clearInterval(diagInterval); }catch(e){} }, 30000);
-    }catch(e){}
+    try { console.log(LOG, 'unblur ENABLED'); } catch(_) {}
   }
 
-  initialize();
+  function _onScroll() {
+    clearTimeout(_scrollTimer);
+    _scrollTimer = setTimeout(() => {
+      try { processAll(); }         catch(e) {}
+      try { hideUpgradeOverlay(); } catch(e) {}
+    }, 300);
+  }
+
+  function stopUnblur() {
+    if (!_active) return;
+    _active = false;
+
+    // Disconnect observers
+    try { if (_mo) { _mo.disconnect(); _mo = null; } }  catch(e) {}
+    try { if (_io) { _io.disconnect(); _io = null; } }  catch(e) {}
+    clearTimeout(_scrollTimer);
+    clearInterval(_pollInterval);
+    window.removeEventListener('scroll', _onScroll);
+    try { document.removeEventListener('click', onCapturedClick, true); } catch(e) {}
+
+    try { console.log(LOG, 'unblur DISABLED'); } catch(_) {}
+  }
+
+  // Listen for enable/disable signals from popup.js (via chrome.scripting.executeScript)
+  document.addEventListener('MobbinUnblur_Enable',  startUnblur);
+  document.addEventListener('MobbinUnblur_Disable', stopUnblur);
+
+  // Legacy: still honour the old auto-run event (backward compat, unused by new popup)
+  document.addEventListener('MobbinUnblur_AutoRun', startUnblur);
+
+  try { console.debug(LOG, 'loaded — waiting for user to click Unblur button'); } catch(_) {}
 })();

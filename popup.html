@@ -1,53 +1,203 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { width:380px; background:linear-gradient(135deg,#0a0a0a,#1a1a1a); color:#fff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',Arial; overflow:hidden; }
-    .wrap{ margin:16px; padding:20px; border-radius:18px; background:rgba(255,255,255,.05); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%); border:1px solid rgba(255,255,255,.12); box-shadow:0 8px 32px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08); }
-    h3{ font-size:20px; font-weight:800; letter-spacing:-.3px; margin-bottom:6px; background:linear-gradient(135deg,#fff,#bdbdbd); -webkit-background-clip:text; -webkit-text-fill-color:transparent; display:flex; align-items:center; gap:8px; }
-    .pro-badge{ background:linear-gradient(135deg,#FFD700,#FFA500); color:#000; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:900; letter-spacing:.5px; display:none; }
-    .sub{ font-size:11px; color:rgba(255,255,255,.55); margin-bottom:14px; text-transform:uppercase; letter-spacing:.8px; }
-    .badge{ display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); font-size:11px; font-weight:700; }
-    .dot{ width:8px; height:8px; border-radius:50%; background:#4ade80; box-shadow:0 0 10px #4ade80; }
-    .card{ margin-top:16px; padding:14px; border-radius:12px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); }
-    .line{ font-size:12px; color:rgba(255,255,255,.75); margin:6px 0; }
-    .code{ font-family:'Courier New',monospace; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12); padding:10px; border-radius:10px; color:rgba(255,255,255,.75); font-size:11px; }
-    button{ width:100%; padding:16px; border:none; border-radius:12px; cursor:pointer; margin-top:12px; position:relative; overflow:hidden; color:#fff; font-weight:800; letter-spacing:.3px; font-size:15px; background:rgba(255,255,255,.1); backdrop-filter:blur(10px) saturate(180%); -webkit-backdrop-filter:blur(10px) saturate(180%); border:1px solid rgba(255,255,255,.2); box-shadow:0 6px 22px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.25); transition:all .35s cubic-bezier(.4,0,.2,1); }
-    button::before{ content:''; position:absolute; top:-60%; left:-60%; width:220%; height:220%; transform:rotate(45deg); background:linear-gradient(45deg,transparent,rgba(255,255,255,.12),transparent); transition:.6s; }
-    button:hover::before{ left:100%; }
-    button:hover{ transform:translateY(-2px); background:rgba(255,255,255,.16); border-color:rgba(255,255,255,.3); }
-    .foot{ text-align:center; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,.08); color:rgba(255,255,255,.5); font-size:10px; letter-spacing:.6px; }
-    .foot strong{ color:#fff; }
-    .foot a{ color:#6AB7FF; text-decoration:none; font-weight:700; }
-    .trial-text{ display:block; }
-    .pro-text{ display:none; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 300px;
+      background: #0d0d0d;
+      color: #fff;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      border-radius: 14px;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .title-group { flex: 1; }
+    .title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.2px;
+    }
+    .subtitle {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 1px;
+    }
+
+    /* Main toggle card */
+    .toggle-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      transition: border-color 0.3s ease;
+    }
+    .toggle-card.active {
+      border-color: rgba(124, 58, 237, 0.5);
+      background: rgba(124, 58, 237, 0.08);
+    }
+
+    .status-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 14px;
+      transition: color 0.3s;
+    }
+    .status-label.active { color: #a78bfa; }
+
+    /* The big toggle button */
+    .toggle-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      background: rgba(255,255,255,0.06);
+      border: 2px solid rgba(255,255,255,0.12);
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .toggle-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .toggle-btn:hover { transform: scale(1.06); }
+    .toggle-btn:hover::before { opacity: 1; }
+    .toggle-btn:active { transform: scale(0.96); }
+
+    .toggle-btn.on {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      border-color: #7c3aed;
+      box-shadow: 0 0 28px rgba(124, 58, 237, 0.55), 0 0 60px rgba(124, 58, 237, 0.2);
+    }
+
+    .toggle-state {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.35);
+      transition: color 0.3s;
+    }
+    .toggle-state.on { color: #fff; }
+
+    .toggle-hint {
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      line-height: 1.5;
+      transition: color 0.3s;
+    }
+    .toggle-hint.active { color: rgba(255,255,255,0.55); }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.07);
+      margin: 16px 0;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      font-size: 10px;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 0.4px;
+    }
+    .footer a {
+      color: rgba(124, 58, 237, 0.8);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .footer a:hover { color: #a78bfa; }
+
+    /* Pulse animation when active */
+    @keyframes pulse-ring {
+      0%   { transform: scale(1);   opacity: 0.6; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    .pulse-ring {
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      border: 2px solid #7c3aed;
+      animation: pulse-ring 2s ease-out infinite;
+      display: none;
+    }
+    .toggle-btn.on .pulse-ring { display: block; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h3>
-      <span>Mobbin Unblur PRO</span>
-      <span class="pro-badge" id="pro-badge">✨ PRO</span>
-    </h3>
-    <div class="sub">Auto mode · Glass Edition</div>
-    <div class="badge"><div class="dot"></div> MONITORING ACTIVE</div>
-    <div class="card">
-      <div class="line trial-text" id="trial-text">Trial is now based on <strong>50 images</strong>.</div>
-      <div class="line trial-text">After 50 unblurs, a license popup will appear.</div>
-      <div class="line trial-text">Enter key to <strong>get lifetime access</strong>.</div>
-      <div class="line pro-text" id="pro-text"><strong>✨ PRO ACTIVATED</strong> - Unlimited access forever!</div>
-      <div class="code">Watermark: 94cdc612-6b0c-4ad7-b99c-500f420f8b98 · Width: 3840</div>
-    </div>
-    <button id="unblur-mobbin">Unblur Mobbin</button>
-    <div class="foot">
-      <div class="trial-text">Free trial: <strong>50 images</strong> · Enter key to get <strong>lifetime access</strong></div>
-      <div class="pro-text">💎 You have lifetime unlimited access</div>
-      <div style="margin-top:10px">
-        📢 Join <a href="https://t.me/mobbinUnblur" target="_blank">Telegram Group</a> for updates & questions
+  <div class="container">
+    <div class="header">
+      <div class="logo">🔓</div>
+      <div class="title-group">
+        <div class="title">Mobbin Unblur</div>
+        <div class="subtitle">PRO · Glass Edition</div>
       </div>
     </div>
+
+    <div class="toggle-card" id="toggleCard">
+      <div class="status-label" id="statusLabel">UNBLUR OFF</div>
+
+      <button class="toggle-btn" id="toggleBtn" title="Click to toggle unblur">
+        <div class="pulse-ring"></div>
+        <span id="toggleIcon">🔒</span>
+      </button>
+
+      <div class="toggle-state" id="toggleState">OFF</div>
+      <div class="toggle-hint" id="toggleHint">
+        Click to unblur all screens<br>on this Mobbin page
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="footer">
+      📢 <a href="https://t.me/mobbinUnblur" target="_blank">Telegram</a> · Updates &amp; support
+    </div>
   </div>
+
   <script src="popup.js"></script>
 </body>
 </html>

@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Mobbin Unblur PRO - Glass Edition",
-  "version": "7.2.2",
-  "description": "v7.2.2: Fix isOnAppDetailPage — support all Mobbin URL formats",
+  "version": "7.3.0",
+  "description": "v7.3.0: Manual-trigger mode — click the Unblur button to activate",
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage"
   ],
   "host_permissions": [
     "*://*.mobbin.com/*",

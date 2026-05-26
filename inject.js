@@ -503,29 +503,62 @@
     try { rewriteEncryptedImages(); } catch(_) {}
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', indexInitial);
-  } else { indexInitial(); }
-  setTimeout(indexInitial, 800);
-  setTimeout(indexInitial, 2000);
-  setTimeout(indexInitial, 5000);
+  // ── Manual-trigger gate (dormant by default) ──────────────────────────────
+  // inject.js does nothing until the user clicks the Unblur button in the popup.
+  // popup.js sends MobbinUnblur_Enable via chrome.scripting.executeScript.
 
-  // Re-index on DOM mutations (new cards added on scroll)
-  try {
-    const mo = new MutationObserver(function(){
-      clearTimeout(mo.__t);
-      mo.__t = setTimeout(function(){
-        indexInitial();
-        rewriteEncryptedImages();
-      }, 250);
-    });
-    if (document.body) mo.observe(document.body, { childList: true, subtree: true });
-    else document.addEventListener('DOMContentLoaded', function(){ mo.observe(document.body, { childList: true, subtree: true }); });
-  } catch(_) {}
+  let _injectActive   = false;
+  let _injectMo       = null;
+  let _injectTimers   = [];
 
-  setTimeout(rewriteEncryptedImages, 1000);
-  setTimeout(rewriteEncryptedImages, 3000);
-  setTimeout(rewriteEncryptedImages, 6000);
+  function startInject() {
+    if (_injectActive) return;
+    _injectActive = true;
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', indexInitial, { once: true });
+    } else { indexInitial(); }
+
+    _injectTimers.push(setTimeout(indexInitial, 800));
+    _injectTimers.push(setTimeout(indexInitial, 2000));
+    _injectTimers.push(setTimeout(indexInitial, 5000));
+
+    // MutationObserver — re-harvest when new cards arrive
+    try {
+      _injectMo = new MutationObserver(function(){
+        clearTimeout(_injectMo.__t);
+        _injectMo.__t = setTimeout(function(){
+          indexInitial();
+          rewriteEncryptedImages();
+        }, 250);
+      });
+      const root = document.body || document.documentElement;
+      if (root) _injectMo.observe(root, { childList: true, subtree: true });
+      else document.addEventListener('DOMContentLoaded', function(){
+        _injectMo.observe(document.body, { childList: true, subtree: true });
+      });
+    } catch(_) {}
+
+    _injectTimers.push(setTimeout(rewriteEncryptedImages, 1000));
+    _injectTimers.push(setTimeout(rewriteEncryptedImages, 3000));
+    _injectTimers.push(setTimeout(rewriteEncryptedImages, 6000));
+
+    // Screen click interception (only while unblur is active)
+    try { document.addEventListener('click', onCapturedClick, true); } catch(_) {}
+  }
+
+  function stopInject() {
+    if (!_injectActive) return;
+    _injectActive = false;
+    try { if (_injectMo) { _injectMo.disconnect(); _injectMo = null; } } catch(_) {}
+    _injectTimers.forEach(t => clearTimeout(t));
+    _injectTimers = [];
+    try { document.removeEventListener('click', onCapturedClick, true); } catch(_) {}
+  }
+
+  document.addEventListener('MobbinUnblur_Enable',  startInject);
+  document.addEventListener('MobbinUnblur_Disable', stopInject);
+  document.addEventListener('MobbinUnblur_AutoRun', startInject);
 
   // ── Diagnostic ───────────────────────────────────────────────────────────────
   try {
@@ -726,7 +759,9 @@
     } catch(_) {}
   }
 
-  try { document.addEventListener('click', onCapturedClick, true); } catch(_) {}
 
-  try { console.debug(LOG, 'v7.0 loaded — fiber+UUID strategy active'); } catch(_) {}
+  // NOTE: onCapturedClick is registered by startInject() only when unblur is active.
+  // (The standalone addEventListener below has been replaced by the gate pattern above.)
+
+  try { console.debug(LOG, 'v7.0 inject loaded — dormant, waiting for Unblur button'); } catch(_) {}
 })();
