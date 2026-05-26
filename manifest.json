@@ -1,12 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Mobbin Unblur PRO - Glass Edition",
-  "version": "7.3.0",
-  "description": "v7.3.0: Manual-trigger mode — click the Unblur button to activate",
+  "version": "7.3.1",
+  "description": "v7.3.1: Fix popup crash — use badge text for state, no storage permission needed",
   "permissions": [
     "activeTab",
-    "scripting",
-    "storage"
+    "scripting"
   ],
   "host_permissions": [
     "*://*.mobbin.com/*",
