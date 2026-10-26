@@ -203,6 +203,95 @@
     return null;
   }
 
+  // ── Proximity pairing: enc URL ↔ nearest path URL in the same text blob ──────
+  // Mobbin emits both forms of a screen's URL close together inside one JSON/RSC
+  // object. Pairing each enc URL with the *nearest* path URL (rather than the
+  // first one in the whole response) recovers a mapping per screen instead of a
+  // single mapping reused for every locked card.
+  const WM_RE = /94cdc612-6b0c-4ad7-b99c-500f420f8b98/i;
+
+  function unescapePayload(text) {
+    return String(text)
+      .replace(/\\u0026/gi, '&')
+      .replace(/\\"/g, '"')
+      .replace(/\\\//g, '/');
+  }
+
+  function pairUrlsByProximity(text) {
+    try {
+      if (!text || text.indexOf('bytescale.mobbin.com') === -1) return 0;
+      const t = unescapePayload(text);
+      if (t.indexOf('file.webp') === -1) return 0;
+
+      const encs = [], paths = [];
+      let m;
+      const er = new RegExp(ENC_RE.source, 'gi');
+      while ((m = er.exec(t)) !== null) encs.push({ url: m[0].replace(/\\+$/, ''), i: m.index });
+      if (!encs.length) return 0;
+      const pr = new RegExp(PATH_RE.source, 'gi');
+      while ((m = pr.exec(t)) !== null) {
+        const u = m[0].replace(/\\+$/, '');
+        if (!isUsablePathUrl(u)) continue;
+        if (WM_RE.test(u)) continue;
+        paths.push({ url: u, i: m.index });
+      }
+      if (!paths.length) return 0;
+
+      let added = 0;
+      for (const e of encs) {
+        let best = null, bestD = Infinity;
+        for (const p of paths) {
+          const d = Math.abs(p.i - e.i);
+          if (d < bestD) { bestD = d; best = p; }
+        }
+        // Beyond this distance the two URLs are almost certainly unrelated screens.
+        if (!best || bestD > 4000) continue;
+        if (!assetUrlMap.has(e.url)) { assetUrlMap.set(e.url, best.url); added++; }
+        const tok = encTokenOf(e.url);
+        if (tok && !assetUrlMap.has('enc:' + tok)) { assetUrlMap.set('enc:' + tok, best.url); added++; }
+      }
+      return added;
+    } catch(_) { return 0; }
+  }
+
+  // ── Inline payload scan ──────────────────────────────────────────────────────
+  // Mobbin is a Next.js App Router site: the first page's data never goes through
+  // fetch/XHR — it is streamed into the HTML as self.__next_f.push([1,"..."])
+  // inline <script> chunks. Without reading those, every screen rendered on the
+  // initial load has no path URL available and stays blurred. (__NEXT_DATA__ only
+  // exists on the old Pages Router, so the existing check never fires here.)
+  const scannedScripts = new WeakSet();
+
+  function scanInlinePayloads() {
+    let added = 0;
+    try {
+      document.querySelectorAll('script').forEach(function(sc) {
+        try {
+          if (scannedScripts.has(sc)) return;
+          scannedScripts.add(sc);
+          const txt = sc.textContent;
+          if (!txt || txt.indexOf('bytescale.mobbin.com') === -1) return;
+          added += pairUrlsByProximity(txt);
+          try { deepWalk(JSON.parse(txt)); } catch(_) {}
+        } catch(_) {}
+      });
+    } catch(_) {}
+    try {
+      const chunks = window.self && self.__next_f;
+      if (Array.isArray(chunks)) {
+        for (const chunk of chunks) {
+          const txt = Array.isArray(chunk) ? chunk[1] : chunk;
+          if (typeof txt === 'string') added += pairUrlsByProximity(txt);
+        }
+      }
+    } catch(_) {}
+    if (added) {
+      try { console.log(LOG, 'scanInlinePayloads — added', added, 'url mapping(s)'); } catch(_) {}
+      try { rewriteEncryptedImages(); } catch(_) {}
+    }
+    return added;
+  }
+
   // ── Core rewrite: encrypted → path ──────────────────────────────────────────
   function rewriteEncryptedImages() {
     try {
@@ -237,6 +326,20 @@
         rewroteImg.add(img);
         try { if (img.hasAttribute('srcset')) img.removeAttribute('srcset'); } catch(_) {}
         try { if (img.hasAttribute('sizes'))  img.removeAttribute('sizes');  } catch(_) {}
+        // A constructed path URL is a guess; if it 404s, put the original back and
+        // let a later pass (with a real mapping) try again instead of leaving a
+        // broken image.
+        try {
+          const prevSrc = src;
+          img.addEventListener('error', function onErr() {
+            try {
+              img.removeEventListener('error', onErr);
+              rewroteImg.delete(img);
+              img.src = prevSrc;
+              console.debug(LOG, 'rewrite 404 — reverted', String(prevSrc).slice(0, 80));
+            } catch(_) {}
+          }, { once: true });
+        } catch(_) {}
         try { img.src = fullUnblurUrl(pathUrl); } catch(_) { continue; }
         n++;
       }
@@ -361,31 +464,12 @@
         try { deepWalk(JSON.parse(candidate)); } catch(_) {}
       }
     } catch(_) {}
-    // Raw URL pairing: scan for any path URL + enc URL in the same response
+    // Raw URL pairing: pair each enc URL with the nearest path URL in the response.
     try {
-      if (text.indexOf('bytescale.mobbin.com') === -1) return;
-      const rawPathUrls = text.match(new RegExp(PATH_RE.source, 'gi')) || [];
-      const rawEncUrls  = text.match(new RegExp(ENC_RE.source, 'gi'))  || [];
-      if (rawPathUrls.length && rawEncUrls.length) {
-        let pathPick = null;
-        for (const p of rawPathUrls) {
-          if (!isUsablePathUrl(p)) continue;
-          if (/94cdc612-6b0c-4ad7-b99c-500f420f8b98/i.test(p)) continue;
-          pathPick = p;
-          break;
-        }
-        if (pathPick) {
-          let added = 0;
-          for (const enc of rawEncUrls) {
-            if (!assetUrlMap.has(enc)) { assetUrlMap.set(enc, pathPick); added++; }
-            const t = encTokenOf(enc);
-            if (t && !assetUrlMap.has('enc:' + t)) { assetUrlMap.set('enc:' + t, pathPick); added++; }
-          }
-          if (added) {
-            try { console.debug(LOG, 'raw URL pairing: added', added, 'mappings from response'); } catch(_) {}
-            try { rewriteEncryptedImages(); } catch(_) {}
-          }
-        }
+      const added = pairUrlsByProximity(text);
+      if (added) {
+        try { console.debug(LOG, 'raw URL pairing: added', added, 'mappings from response'); } catch(_) {}
+        try { rewriteEncryptedImages(); } catch(_) {}
       }
     } catch(_) {}
   }
@@ -496,6 +580,7 @@
   // ── indexInitial: full harvest + rewrite pass ────────────────────────────────
   function indexInitial() {
     try { if (window.__NEXT_DATA__) deepWalk(window.__NEXT_DATA__); } catch(_) {}
+    try { scanInlinePayloads(); } catch(_) {}
     harvestFromAnchors();
     harvestFromCells();
     harvestFromGrid();

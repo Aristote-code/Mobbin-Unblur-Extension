@@ -65,6 +65,73 @@
     try{ document.querySelectorAll('img[src*="bytescale.mobbin.com"]').forEach(processImage); }catch(e){}
   }
 
+  // ── Runtime blur-overlay removal ─────────────────────────────────────────────
+  // unblur.css can only target class names we already know about. Mobbin ships
+  // hashed/utility classes that change, so any card whose overlay doesn't match
+  // one of those selectors keeps its glass panel and still looks blurred. This
+  // pass finds the overlays by what they actually do — a blur in filter or
+  // backdrop-filter on an element (or its ::before/::after) layered over a
+  // bytescale image — and neutralises them regardless of class name.
+  const MU_PSEUDO_CLASS = 'mu-noblur-pseudo';
+
+  function neutralizeOverlay(el){
+    try{
+      el.style.setProperty('backdrop-filter', 'none', 'important');
+      el.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+      el.style.setProperty('filter', 'none', 'important');
+      el.style.setProperty('opacity', '0', 'important');
+      el.style.setProperty('pointer-events', 'none', 'important');
+    }catch(e){}
+  }
+
+  function hasBlur(style){
+    if(!style) return false;
+    const bf = style.backdropFilter || style.webkitBackdropFilter || '';
+    const f  = style.filter || '';
+    return bf.indexOf('blur') !== -1 || f.indexOf('blur') !== -1;
+  }
+
+  function killBlurOverlays(){
+    try{
+      const imgs = document.querySelectorAll('img[src*="bytescale.mobbin.com"]');
+      for(const img of imgs){
+        let cur = img.parentElement;
+        // Overlays live as siblings of the image within the card wrapper, a few
+        // levels up at most. Staying shallow avoids touching page chrome.
+        for(let d=0; d<4 && cur; d++, cur = cur.parentElement){
+          let kids;
+          try{ kids = cur.children; }catch(e){ break; }
+          for(const el of kids){
+            try{
+              if(el === img || el.tagName === 'IMG' || el.tagName === 'PICTURE' || el.tagName === 'SOURCE') continue;
+              if(el.__muBlurChecked) continue;
+              el.__muBlurChecked = true;
+              const cs = getComputedStyle(el);
+              // Only absolutely/fixed-positioned layers — a blur on a normal
+              // flow element would be content, not an overlay.
+              if(cs.position !== 'absolute' && cs.position !== 'fixed') continue;
+              if(hasBlur(cs)){ neutralizeOverlay(el); continue; }
+              // Pseudo-element overlays can't be styled per element inline, so
+              // tag the host and let unblur.css handle ::before/::after.
+              if(hasBlur(getComputedStyle(el, '::after')) || hasBlur(getComputedStyle(el, '::before'))){
+                el.classList.add(MU_PSEUDO_CLASS);
+              }
+            }catch(e){}
+          }
+          // The card wrapper itself may carry the pseudo-element overlay.
+          try{
+            if(!cur.__muPseudoChecked){
+              cur.__muPseudoChecked = true;
+              if(hasBlur(getComputedStyle(cur, '::after')) || hasBlur(getComputedStyle(cur, '::before'))){
+                cur.classList.add(MU_PSEUDO_CLASS);
+              }
+            }
+          }catch(e){}
+        }
+      }
+    }catch(e){}
+  }
+
   function hideUpgradeOverlay(){
     try{
       const candidates = document.querySelectorAll(
@@ -321,6 +388,7 @@
 
     const run = () => {
       try { processAll(); }         catch(e) {}
+      try { killBlurOverlays(); }   catch(e) {}
       try { hideUpgradeOverlay(); } catch(e) {}
     };
 
@@ -341,6 +409,7 @@
     // MutationObserver — handle dynamically injected images
     try {
       _mo = new MutationObserver((muts) => {
+        try { killBlurOverlays(); }   catch(e) {}
         try { hideUpgradeOverlay(); } catch(e) {}
         muts.forEach(m => {
           m.addedNodes.forEach(node => {
@@ -369,6 +438,7 @@
     clearTimeout(_scrollTimer);
     _scrollTimer = setTimeout(() => {
       try { processAll(); }         catch(e) {}
+      try { killBlurOverlays(); }   catch(e) {}
       try { hideUpgradeOverlay(); } catch(e) {}
     }, 300);
   }
