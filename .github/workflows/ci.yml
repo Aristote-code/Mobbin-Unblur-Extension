@@ -1,0 +1,31 @@
+name: Extension checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --check content.js
+      - run: node --check popup.js
+      - name: Validate manifest and packaged assets
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          manifest = json.loads(Path("manifest.json").read_text())
+          assert manifest["manifest_version"] == 3
+          assets = list(manifest["icons"].values())
+          assets += list(manifest["action"]["default_icon"].values())
+          assets.append(manifest["action"]["default_popup"])
+          for entry in manifest["content_scripts"]:
+              assets += entry.get("js", []) + entry.get("css", [])
+          for asset in assets:
+              assert Path(asset).is_file(), f"Missing packaged asset: {asset}"
+          print("Manifest and packaged assets validated")
+          PYTHON

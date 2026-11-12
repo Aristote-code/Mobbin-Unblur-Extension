@@ -1,203 +1,34 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ScreenClear for Mobbin</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="icons/icon-128.png" width="48" height="48" alt="">
+        <div>
+          <h1>ScreenClear</h1>
+          <p>for Mobbin</p>
+        </div>
+      </header>
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+      <section class="control" aria-labelledby="active-label">
+        <span class="active-icon" aria-hidden="true"></span>
+        <div>
+          <strong id="active-label">Active automatically</strong>
+          <span id="status">Checking this tab…</span>
+        </div>
+      </section>
 
-    body {
-      width: 300px;
-      background: #0d0d0d;
-      color: #fff;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      overflow: hidden;
-      border-radius: 14px;
-    }
+      <button id="refresh" type="button" disabled>Refresh previews</button>
 
-    .container {
-      padding: 20px;
-    }
-
-    /* Header */
-    .header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .logo {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #7c3aed, #4f46e5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-    .title-group { flex: 1; }
-    .title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: -0.2px;
-    }
-    .subtitle {
-      font-size: 11px;
-      color: rgba(255,255,255,0.4);
-      margin-top: 1px;
-    }
-
-    /* Main toggle card */
-    .toggle-card {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 16px;
-      padding: 20px;
-      text-align: center;
-      transition: border-color 0.3s ease;
-    }
-    .toggle-card.active {
-      border-color: rgba(124, 58, 237, 0.5);
-      background: rgba(124, 58, 237, 0.08);
-    }
-
-    .status-label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.35);
-      margin-bottom: 14px;
-      transition: color 0.3s;
-    }
-    .status-label.active { color: #a78bfa; }
-
-    /* The big toggle button */
-    .toggle-btn {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      border: none;
-      cursor: pointer;
-      margin: 0 auto 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      background: rgba(255,255,255,0.06);
-      border: 2px solid rgba(255,255,255,0.12);
-      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-      position: relative;
-      overflow: hidden;
-    }
-    .toggle-btn::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), transparent 70%);
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-    .toggle-btn:hover { transform: scale(1.06); }
-    .toggle-btn:hover::before { opacity: 1; }
-    .toggle-btn:active { transform: scale(0.96); }
-
-    .toggle-btn.on {
-      background: linear-gradient(135deg, #7c3aed, #4f46e5);
-      border-color: #7c3aed;
-      box-shadow: 0 0 28px rgba(124, 58, 237, 0.55), 0 0 60px rgba(124, 58, 237, 0.2);
-    }
-
-    .toggle-state {
-      font-size: 17px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      color: rgba(255,255,255,0.35);
-      transition: color 0.3s;
-    }
-    .toggle-state.on { color: #fff; }
-
-    .toggle-hint {
-      font-size: 11px;
-      color: rgba(255,255,255,0.3);
-      line-height: 1.5;
-      transition: color 0.3s;
-    }
-    .toggle-hint.active { color: rgba(255,255,255,0.55); }
-
-    /* Divider */
-    .divider {
-      height: 1px;
-      background: rgba(255,255,255,0.07);
-      margin: 16px 0;
-    }
-
-    /* Footer */
-    .footer {
-      text-align: center;
-      font-size: 10px;
-      color: rgba(255,255,255,0.25);
-      letter-spacing: 0.4px;
-    }
-    .footer a {
-      color: rgba(124, 58, 237, 0.8);
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .footer a:hover { color: #a78bfa; }
-
-    /* Pulse animation when active */
-    @keyframes pulse-ring {
-      0%   { transform: scale(1);   opacity: 0.6; }
-      100% { transform: scale(1.6); opacity: 0; }
-    }
-    .pulse-ring {
-      position: absolute;
-      inset: -2px;
-      border-radius: 50%;
-      border: 2px solid #7c3aed;
-      animation: pulse-ring 2s ease-out infinite;
-      display: none;
-    }
-    .toggle-btn.on .pulse-ring { display: block; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="logo">🔓</div>
-      <div class="title-group">
-        <div class="title">Mobbin Unblur</div>
-        <div class="subtitle">PRO · Glass Edition</div>
-      </div>
-    </div>
-
-    <div class="toggle-card" id="toggleCard">
-      <div class="status-label" id="statusLabel">UNBLUR OFF</div>
-
-      <button class="toggle-btn" id="toggleBtn" title="Click to toggle unblur">
-        <div class="pulse-ring"></div>
-        <span id="toggleIcon">🔒</span>
-      </button>
-
-      <div class="toggle-state" id="toggleState">OFF</div>
-      <div class="toggle-hint" id="toggleHint">
-        Click to unblur all screens<br>on this Mobbin page
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="footer">
-      📢 <a href="https://t.me/mobbinUnblur" target="_blank">Telegram</a> · Updates &amp; support
-    </div>
-  </div>
-
-  <script src="popup.js"></script>
-</body>
+      <p class="privacy"><span aria-hidden="true">●</span> Runs only on mobbin.com. No analytics or data collection.</p>
+      <p class="disclaimer">Unofficial. Not affiliated with or endorsed by Mobbin.</p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
 </html>

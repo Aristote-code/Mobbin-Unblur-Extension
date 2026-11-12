@@ -1,52 +1,27 @@
 {
   "manifest_version": 3,
-  "name": "Mobbin Unblur PRO - Glass Edition",
-  "version": "7.3.1",
-  "description": "v7.3.1: Fix popup crash — use badge text for state, no storage permission needed",
-  "permissions": [
-    "activeTab",
-    "scripting"
-  ],
-  "host_permissions": [
-    "*://*.mobbin.com/*",
-    "*://*.bytescale.mobbin.com/*"
-  ],
-  "content_scripts": [
-    {
-      "matches": [
-        "*://*.mobbin.com/*"
-      ],
-      "css": [
-        "unblur.css"
-      ],
-      "js": [
-        "unblur.js"
-      ],
-      "run_at": "document_start"
-    },
-    {
-      "matches": [
-        "*://*.mobbin.com/*"
-      ],
-      "js": [
-        "inject.js"
-      ],
-      "run_at": "document_start",
-      "world": "MAIN"
-    }
-  ],
+  "name": "ScreenClear for Mobbin",
+  "version": "1.1.1",
+  "description": "Improves eligible Mobbin image previews and hides the large upgrade banner. Unofficial and not affiliated with Mobbin.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "action": {
+    "default_title": "ScreenClear for Mobbin",
     "default_popup": "popup.html",
-    "default_title": "Mobbin Unblur PRO",
     "default_icon": {
-      "16": "icon.png",
-      "48": "icon.png",
-      "128": "icon.png"
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
     }
   },
-  "icons": {
-    "16": "icon.png",
-    "48": "icon.png",
-    "128": "icon.png"
-  }
+  "content_scripts": [
+    {
+      "matches": ["https://mobbin.com/*", "https://www.mobbin.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }

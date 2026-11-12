@@ -1,72 +1,54 @@
-# Mobbin Unblur Extension
+# ScreenClear for Mobbin
 
-A Chrome extension that unblurs screenshots on [Mobbin](https://mobbin.com) and removes upgrade overlays for a clean browsing experience.
+ScreenClear 1.1.1 improves eligible screenshot previews on Mobbin. This replaces the repository's older Mobbin Unblur PRO / Glass Edition implementation.
 
-## Features
+## Install
 
-- Unblurs all Mobbin screenshots in full resolution (3840px)
-- Removes the white overlay on image cards
-- Hides the "Access all screens" upgrade banner
-- Enables image drag, selection, and right-click saving
-- Works on all Chromium-based browsers (Chrome, Edge, Arc, Brave, Atlas, etc.)
-
-## Installation
-
-### Step 1 — Download the extension
-
-**Option A: Clone with Git**
+1. Clone this repository, or select **Code → Download ZIP** and extract it.
+2. Open `chrome://extensions` (Chrome) or `edge://extensions` (Edge).
+3. Enable **Developer mode** and select **Load unpacked**.
+4. Select the folder containing `manifest.json`.
+5. Open or refresh a signed-in Mobbin tab.
 
 ```bash
 git clone https://github.com/Aristote-code/Mobbin-Unblur-Extension.git
 ```
 
-**Option B: Download ZIP**
+The extension runs automatically. Its popup reports whether the current Mobbin tab is supported and provides a refresh button.
 
-1. Click the green **Code** button at the top of this page
-2. Click **Download ZIP**
-3. Extract the ZIP file to a folder on your computer
+## What it does
 
-### Step 2 — Load in your browser
+- Resolves eligible tiny encrypted screenshot previews using the public CDN's original-file lookup.
+- Keeps the existing image if lookup or image validation fails.
+- Prioritizes visible images and nearby rows while scrolling.
+- Limits concurrent lookups and downloads and caches resolved paths.
+- Handles responsive image sources and recycled list items.
+- Clears screenshot blur filters and matching empty overlays.
+- Hides the matching “Access all screens” upgrade banner.
 
-1. Open your browser and go to `chrome://extensions` (or `edge://extensions`, `brave://extensions`, etc.)
-2. Turn on **Developer mode** (toggle in the top-right corner)
-3. Click **Load unpacked**
-4. Select the folder containing the extension files (`manifest.json`, `unblur.js`, etc.)
-5. The extension icon should appear in your toolbar
+The script preserves opaque `enc` parameters during discovery, validates discovered screenshot paths, and avoids rewriting app logos. Full images are requested as WebP at up to 1920px wide. Availability depends on Mobbin's current CDN behavior.
 
-### Step 3 — Use it
+## Updating from the older extension
 
-1. Go to [mobbin.com](https://mobbin.com) and browse any app screens
-2. The extension runs automatically — images will be unblurred as they load
-3. Click the extension icon in the toolbar and press **Unblur** to manually trigger a re-scan
-
-## Troubleshooting
-
-**Images not unblurring?**
-- Click the extension icon and press the Unblur button
-- Try refreshing the page
-
-**Seeing errors in the extensions page?**
-- Close all Mobbin tabs
-- Go to the extensions page and click **Clear all** on the errors panel
-- Click the reload icon on the extension
-- Open a fresh Mobbin tab
-
-**Extension not loading?**
-- Make sure **Developer mode** is enabled
-- Make sure you selected the correct folder (the one with `manifest.json` in it)
+Pull the latest repository, select **Reload** on the extensions page, then refresh your Mobbin tabs. When installing ScreenClear from a separate folder, disable the older extension to avoid running both implementations together.
 
 ## Files
 
-| File | Description |
-|------|-------------|
-| `manifest.json` | Extension configuration |
-| `unblur.js` | Main content script — rewrites image URLs and hides overlays |
-| `unblur.css` | CSS overrides to remove blurs, overlays, and upgrade banners |
-| `popup.html` | Extension popup UI |
-| `popup.js` | Popup button logic |
-| `icon.png` | Extension icon |
+| File | Purpose |
+| --- | --- |
+| `manifest.json` | Manifest V3 configuration and Mobbin content-script matches |
+| `content.js` | Image discovery, download scheduling, and page adjustments |
+| `popup.html`, `popup.css`, `popup.js` | Status and manual refresh controls |
+| `icons/` | Toolbar and extension icons |
 
-## License
+## Verification
 
-MIT
+```bash
+node --check content.js
+node --check popup.js
+python3 -m json.tool manifest.json
+```
+
+GitHub Actions also checks that the manifest's referenced scripts, popup, and icons exist.
+
+Unofficial and not affiliated with Mobbin. This repository previously identified its license as MIT.
