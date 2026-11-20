@@ -1,6 +1,6 @@
 # ScreenClear for Mobbin
 
-ScreenClear 1.1.1 improves eligible screenshot previews on Mobbin. This replaces the repository's older Mobbin Unblur PRO / Glass Edition implementation.
+ScreenClear 1.1.2 improves eligible screenshot previews on Mobbin. This replaces the repository's older Mobbin Unblur PRO / Glass Edition implementation.
 
 ## Install
 
@@ -24,7 +24,9 @@ The extension runs automatically. Its popup reports whether the current Mobbin t
 - Limits concurrent lookups and downloads and caches resolved paths.
 - Handles responsive image sources and recycled list items.
 - Clears screenshot blur filters and matching empty overlays.
-- Hides the matching “Access all screens” upgrade banner.
+- Hides the “Get Pro” controls in Mobbin navigation and promotions.
+- Hides both the legacy “Access all screens” banner and the inline “PRO / Upgrade for full access to … other apps and sites” banner.
+- Restores a hidden element if React later reuses it for a normal action.
 
 The script preserves opaque `enc` parameters during discovery, validates discovered screenshot paths, and avoids rewriting app logos. Full images are requested as WebP at up to 1920px wide. Availability depends on Mobbin's current CDN behavior.
 
@@ -37,6 +39,7 @@ Pull the latest repository, select **Reload** on the extensions page, then refre
 | File | Purpose |
 | --- | --- |
 | `manifest.json` | Manifest V3 configuration and Mobbin content-script matches |
+| `promotions.js` | Scoped promotion matching and reversible visibility changes |
 | `content.js` | Image discovery, download scheduling, and page adjustments |
 | `popup.html`, `popup.css`, `popup.js` | Status and manual refresh controls |
 | `icons/` | Toolbar and extension icons |
@@ -44,6 +47,9 @@ Pull the latest repository, select **Reload** on the extensions page, then refre
 ## Verification
 
 ```bash
+npm ci
+npm test
+node --check promotions.js
 node --check content.js
 node --check popup.js
 python3 -m json.tool manifest.json

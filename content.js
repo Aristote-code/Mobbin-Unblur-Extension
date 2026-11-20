@@ -20,8 +20,9 @@
   const observerOptions = {
     subtree: true,
     childList: true,
+    characterData: true,
     attributes: true,
-    attributeFilter: ["src", "srcset", "sizes", "style", "class"]
+    attributeFilter: ["src", "srcset", "sizes", "style", "class", "aria-label"]
   };
   let pending = null;
   const knownOverlays = new WeakSet();
@@ -346,24 +347,7 @@
     }
   }
 
-  function hideUpgradeBanners() {
-    // The large sticky promotion is an ASIDE, separate from screenshot cards.
-    // Match its heading and CTA so unrelated sidebars stay visible.
-    for (const banner of document.querySelectorAll("aside")) {
-      const hasHeading = [...banner.querySelectorAll("h1,h2,h3,[role='heading']")]
-        .some(heading => /^Access all\s+[\d,.\s]+\s+screens[.!]?$/i.test(
-          heading.textContent.trim()
-        ));
-      if (!hasHeading) continue;
-      const hasCTA = [...banner.querySelectorAll("button,a")]
-        .some(control => /^Get Pro$/i.test(control.textContent.trim()));
-      if (!hasCTA || banner.querySelector('img[alt$=" screen"]')) continue;
-      if (
-        banner.style.getPropertyValue("display") !== "none" ||
-        banner.style.getPropertyPriority("display") !== "important"
-      ) banner.style.setProperty("display", "none", "important");
-    }
-  }
+  const hideUpgradeBanners = globalThis.ScreenClearPromotions.createHider(document);
 
   function scan() {
     if (pending !== null) {

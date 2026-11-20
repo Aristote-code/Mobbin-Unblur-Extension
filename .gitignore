@@ -3,3 +3,6 @@
 *.zip
 .env
 .env.*
+
+node_modules/
+output/
